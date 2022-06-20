@@ -1,6 +1,7 @@
 package uz.jl;
 
 import com.google.gson.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -75,7 +76,7 @@ public class BaseUtils implements Colors {
     public static String otp(int bound){
         return String.valueOf((new Random().nextInt((int) Math.pow(10,bound-1), (int) Math.pow(10,bound))));
     }
-    public static String encryptWithBlowfish(String key, String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public static String encryptWithKey(String key, String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 
         byte[] KeyData = key.getBytes();
         SecretKeySpec KS = new SecretKeySpec(KeyData, "Blowfish");
@@ -86,13 +87,20 @@ public class BaseUtils implements Colors {
         return new String(Base64.getEncoder().encode(bytes));
     }
 
-    public static String decryptWithBlowfish(String key, String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public static String decryptWithKey(String key, String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         byte[] KeyData = key.getBytes();
         SecretKeySpec KS = new SecretKeySpec(KeyData, "Blowfish");
         Cipher cipher = Cipher.getInstance("Blowfish");
         cipher.init(Cipher.DECRYPT_MODE,KS);
         byte[] decr = cipher.doFinal(Base64.getDecoder().decode(text.getBytes()));
         return new String(decr);
+    }
+    public static String encode(String rawPassword) {
+        return BCrypt.hashpw(rawPassword, BCrypt.gensalt(12));
+    }
+
+    public static boolean matchPassword(String rawPassword, String encodedPassword) {
+        return BCrypt.checkpw(rawPassword, encodedPassword);
     }
 
 }

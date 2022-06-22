@@ -8,12 +8,14 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.Console;
 import java.lang.reflect.Type;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Random;
 import java.util.Scanner;
@@ -22,13 +24,13 @@ import static java.lang.System.out;
 
 public class BaseUtils implements Colors {
 
-   public static Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
+    public static Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
         @Override
         public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
             Instant instant = Instant.ofEpochMilli(json.getAsJsonPrimitive().getAsLong());
             return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
         }
-    }).setPrettyPrinting().create();
+    }).registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (localDateTime, type, jsonSerializationContext) -> new JsonPrimitive(DateTimeFormatter.ofPattern("d MMM uuuu HH:mm:ss").format(localDateTime))).setPrettyPrinting().create();
     public static Gson gsonWithNulls = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
     private final static Scanner readText = new Scanner(System.in);
@@ -43,9 +45,6 @@ public class BaseUtils implements Colors {
         return readText.nextLine();
     }
 
-    public static String readPassword(String data) {
-        return new String(System.console().readPassword(data + Colors.BLUE));
-    }
 
     public static String readText(String data, String color) {
         print(data, color);
@@ -73,9 +72,10 @@ public class BaseUtils implements Colors {
         out.printf((data) + "%n", args);
     }
 
-    public static String otp(int bound){
-        return String.valueOf((new Random().nextInt((int) Math.pow(10,bound-1), (int) Math.pow(10,bound))));
+    public static String otp(int bound) {
+        return String.valueOf((new Random().nextInt((int) Math.pow(10, bound - 1), (int) Math.pow(10, bound))));
     }
+
     public static String encryptWithKey(String key, String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 
         byte[] KeyData = key.getBytes();
@@ -91,10 +91,11 @@ public class BaseUtils implements Colors {
         byte[] KeyData = key.getBytes();
         SecretKeySpec KS = new SecretKeySpec(KeyData, "Blowfish");
         Cipher cipher = Cipher.getInstance("Blowfish");
-        cipher.init(Cipher.DECRYPT_MODE,KS);
+        cipher.init(Cipher.DECRYPT_MODE, KS);
         byte[] decr = cipher.doFinal(Base64.getDecoder().decode(text.getBytes()));
         return new String(decr);
     }
+
     public static String encode(String rawPassword) {
         return BCrypt.hashpw(rawPassword, BCrypt.gensalt(12));
     }
